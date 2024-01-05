@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections))] 
 public class PlayerController : MonoBehaviour
 {
     private Rigidbody2D rb;
@@ -14,27 +16,41 @@ public class PlayerController : MonoBehaviour
     Vector2 moveInput;
     public float walkSpeed = 5f;
     public float runSpeed = 8f;
+    public float airWalkSpeed = 7f;
+    public float jumpImpulse = 10f;
+    TouchingDirections touchingDiretions;
 
     public float CurrentMoveSpeed
-    {
+    { 
         get
         {
-            if(IsMoving)
+            if(IsMoving && !touchingDiretions.IsOnWall)
             {
-                if(IsRunning) 
+                if (touchingDiretions.IsGrounded)
                 {
-                    return runSpeed;
+                    if (IsRunning)
+                    {
+                        return runSpeed;
+                    }
+                    else
+                    {
+                        return walkSpeed;
+                    }
                 }
                 else
-                {
-                    return walkSpeed;
+                {//Air move
+                    return airWalkSpeed;
                 }
+
             }
+            
             else
             {
                 //idle speed = 0;
                 return 0;
             }
+
+            
         }
     }
 
@@ -51,6 +67,7 @@ public class PlayerController : MonoBehaviour
         {
             _isMoving = value;
             animator.SetBool(AnimationStrings.isMoving, value);
+
 
 
         }
@@ -97,23 +114,15 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
+        touchingDiretions = GetComponent<TouchingDirections>();
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    void FixedUpdate() //when you want to do a physics update, generally with rigidbody, you do it in fixed update.
+    private void FixedUpdate() //when you want to do a physics update, generally with rigidbody, you do it in fixed update.
     {
         rb.velocity = new Vector2(moveInput.x * CurrentMoveSpeed, rb.velocity.y);
+
+        animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
     }
 
     public void OnMove(InputAction.CallbackContext context)
@@ -152,6 +161,16 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void OnJump(InputAction.CallbackContext context)
+    {
+        //TODO: Check if alive as well
+        if(context.started && touchingDiretions.IsGrounded)
+        {
+            animator.SetTrigger(AnimationStrings.jump);
+            rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
+        }
+        
+    }
 
 
 }
