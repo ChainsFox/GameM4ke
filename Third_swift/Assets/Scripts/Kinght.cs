@@ -7,7 +7,10 @@ using UnityEngine;
 public class Kinght : MonoBehaviour
 {
     public float walkSpeed = 3f;
+    public float walkStopRate = 0.05f;
+    public DetectionZone attackZone;
     Rigidbody2D rb;
+    Animator animator;
     TouchingDirections touchingDirections;
     public enum WalkableDirection { Right, Left};
 
@@ -38,10 +41,40 @@ public class Kinght : MonoBehaviour
         }
     }
 
+    public bool _hasTarget = false;
+    public bool HasTarget
+    { 
+        get
+        {
+            return _hasTarget;
+        }
+
+        private set
+        {
+            _hasTarget = value;
+            animator.SetBool(AnimationStrings.hasTarget, value);
+        }
+            
+    }
+
+    public bool CanMove
+    {
+        get
+        {
+            return animator.GetBool(AnimationStrings.canMove);
+        }
+    }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         touchingDirections = GetComponent<TouchingDirections>();
+        animator = GetComponent<Animator>();
+    }
+
+    private void Update()
+    {
+        HasTarget = attackZone.detectedColliders.Count > 0;
     }
 
     private void FixedUpdate()
@@ -50,7 +83,12 @@ public class Kinght : MonoBehaviour
         {
             FlipDirection();
         }
-        rb.velocity = new Vector2(walkSpeed * walkDirectionVector.x, rb.velocity.y);
+
+        if (CanMove)
+            rb.velocity = new Vector2(walkSpeed * walkDirectionVector.x, rb.velocity.y);
+        else
+            rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, 0, walkStopRate), rb.velocity.y); ; //slowly transition to 0 when the knight attack
+
     }
 
     private void FlipDirection()
@@ -69,15 +107,7 @@ public class Kinght : MonoBehaviour
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    
 }
