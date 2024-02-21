@@ -3,15 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections))]
+[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections), typeof(Damageable))]
 public class Kinght : MonoBehaviour
 {
     public float walkSpeed = 3f;
     public float walkStopRate = 0.05f;
     public DetectionZone attackZone;
+    public DetectionZone cliffDetectionZone;
     Rigidbody2D rb;
     Animator animator;
     TouchingDirections touchingDirections;
+    Damageable damageable;
     public enum WalkableDirection { Right, Left};
 
     private WalkableDirection _walkDirection;
@@ -65,16 +67,36 @@ public class Kinght : MonoBehaviour
         }
     }
 
+    public float AttackCooldown 
+    {
+        get
+        {
+            return animator.GetFloat(AnimationStrings.attackCooldown);
+        }
+        private set
+        {
+            animator.SetFloat(AnimationStrings.attackCooldown, MathF.Max(value, 0));
+        }
+    
+    
+    }
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         touchingDirections = GetComponent<TouchingDirections>();
         animator = GetComponent<Animator>();
+        damageable = GetComponent<Damageable>();
     }
 
     private void Update()
     {
         HasTarget = attackZone.detectedColliders.Count > 0;
+        if(AttackCooldown > 0)
+        {
+            AttackCooldown -= Time.deltaTime;
+
+        }
     }
 
     private void FixedUpdate()
@@ -84,10 +106,14 @@ public class Kinght : MonoBehaviour
             FlipDirection();
         }
 
-        if (CanMove)
-            rb.velocity = new Vector2(walkSpeed * walkDirectionVector.x, rb.velocity.y);
-        else
-            rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, 0, walkStopRate), rb.velocity.y); ; //slowly transition to 0 when the knight attack
+        if(!damageable.LockVelocity) //if we are not damage, meaning we dont get knockback(we dont get velocity locked) then...
+        {
+            if (CanMove)
+                rb.velocity = new Vector2(walkSpeed * walkDirectionVector.x, rb.velocity.y);
+            else
+                rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, 0, walkStopRate), rb.velocity.y); ; //slowly transition to 0 when the knight attack
+        }
+        
 
     }
 
@@ -107,7 +133,18 @@ public class Kinght : MonoBehaviour
         }
     }
 
+    public void OnHit(int damage, Vector2 knockback)
+    {
+        rb.velocity = new Vector2(knockback.x, rb.velocity.y + knockback.y);
+    }
     
+    public void OnCliffDetected()
+    {
+        if(touchingDirections.IsGrounded)
+        {
+            FlipDirection();
+        }
+    }
 
     
 }

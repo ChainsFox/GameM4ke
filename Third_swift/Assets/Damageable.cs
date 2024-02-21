@@ -1,9 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Damageable : MonoBehaviour
 {
+    public UnityEvent<int, Vector2> damageableHit;
+
     Animator animator;
 
     [SerializeField]
@@ -41,6 +44,19 @@ public class Damageable : MonoBehaviour
     [SerializeField]
     private bool _isAlive = true;
 
+    //public bool IsHit { get
+    //    {
+    //        return animator.GetBool(AnimationStrings.isHit);   
+    //    }
+        
+    //    private set
+    //    {
+    //        animator.SetBool(AnimationStrings.isHit, value);
+    //    }
+    
+    
+    //} //remove in part 16
+
     [SerializeField]
     private bool isInvincible = false;
     private float timeSinceHit = 0;
@@ -61,6 +77,19 @@ public class Damageable : MonoBehaviour
 
     }
 
+    //the velocity should not be changed while this is true but needs to be respected by other physics components like the player controller
+    public bool LockVelocity
+    {
+        get
+        {
+            return animator.GetBool(AnimationStrings.lockVelocity);
+        }
+        set
+        {
+            animator.SetBool(AnimationStrings.lockVelocity, value);
+        }
+    }
+
     private void Awake()
     {
         animator = GetComponent<Animator>();
@@ -79,15 +108,23 @@ public class Damageable : MonoBehaviour
             timeSinceHit += Time.deltaTime;
         }
 
-        Hit(10);
+        //Hit(10);
     }
-
-    public void Hit(int damage)
+    //return the damageable took damage or not
+    public bool Hit(int damage, Vector2 knockback)
     {
         if(IsAlive && !isInvincible)//check if the character IsAlive and if the character is not in Invincible state
         {
             Health -= damage;
             isInvincible = true;
+
+            //notify other subscribed components that the damageable was hit to handle the knockback and such
+            animator.SetTrigger(AnimationStrings.hitTrigger);
+            LockVelocity = true;
+
+            damageableHit?.Invoke(damage, knockback);//this is a unity event to pass that knockback information to another script
+            return true;
         }
+        return false;
     }
 }

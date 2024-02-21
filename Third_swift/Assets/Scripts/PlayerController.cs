@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections))] 
+[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections), typeof(Damageable) )] 
 public class PlayerController : MonoBehaviour
 {
     private Rigidbody2D rb;
@@ -19,6 +19,7 @@ public class PlayerController : MonoBehaviour
     public float airWalkSpeed = 7f;
     public float jumpImpulse = 10f;
     TouchingDirections touchingDiretions;
+    Damageable damageable;
 
     public float CurrentMoveSpeed
     { 
@@ -120,6 +121,7 @@ public class PlayerController : MonoBehaviour
     }
 
     public bool _isFacingRight = true;
+
     public bool IsFacingRight 
     { 
         get { return _isFacingRight; } 
@@ -141,12 +143,14 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         touchingDiretions = GetComponent<TouchingDirections>();
+        damageable = GetComponent<Damageable>();
     }
 
 
     private void FixedUpdate() //when you want to do a physics update, generally with rigidbody, you do it in fixed update.
     {
-        rb.velocity = new Vector2(moveInput.x * CurrentMoveSpeed, rb.velocity.y);
+        if(!damageable.LockVelocity)//if the character is not hit(=false) then we can move, if we get hit we cant update the velocity base on our input(aka you cant move)
+            rb.velocity = new Vector2(moveInput.x * CurrentMoveSpeed, rb.velocity.y);
 
         animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
     }
@@ -211,6 +215,11 @@ public class PlayerController : MonoBehaviour
             animator.SetTrigger(AnimationStrings.attackTrigger);
         }
 
+    }
+
+    public void OnHit(int damge, Vector2 knockback)
+    {
+        rb.velocity = new Vector2(knockback.x, rb.velocity.y + knockback.y);
     }
 
 
