@@ -6,7 +6,8 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirections), typeof(Damageable))]
 public class Kinght : MonoBehaviour
 {
-    public float walkSpeed = 3f;
+    public float walkAcceleration = 3f;
+    public float maxSpeed = 3f;
     public float walkStopRate = 0.05f;
     public DetectionZone attackZone;
     public DetectionZone cliffDetectionZone;
@@ -108,8 +109,15 @@ public class Kinght : MonoBehaviour
 
         if(!damageable.LockVelocity) //if we are not damage, meaning we dont get knockback(we dont get velocity locked) then...
         {
-            if (CanMove)
-                rb.velocity = new Vector2(walkSpeed * walkDirectionVector.x, rb.velocity.y);
+            if (CanMove && touchingDirections.IsGrounded)
+                //acceleration towards max speed
+                //float xVelocity = Mathf.Clamp(rb.velocity.x + (walkAcceleration * WalkDirectionVector.x * Time.fixedDeltaTime), -maxSpeed, maxSpeed); new logic
+                //walkSpeed * walkDirectionVector.x,... old logic
+
+                //rb.velocity.x -> we start with the current x velocity and then we increase it in a certain direction basing if we facing left or right, and as we increase the value
+                //we limit it with the clamp value with the -maxSpeed and maxSpeed, which is just the max speed for both left and right, y axis we leave alone.
+                rb.velocity = new Vector2(Mathf.Clamp(rb.velocity.x + (walkAcceleration * walkDirectionVector.x), -maxSpeed, maxSpeed), rb.velocity.y);
+                //Bug: if i remove time.deltatime then is ok, the bug is the knight swithc dir when touch wall
             else
                 rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, 0, walkStopRate), rb.velocity.y); ; //slowly transition to 0 when the knight attack
         }

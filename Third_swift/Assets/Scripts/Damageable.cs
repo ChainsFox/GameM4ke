@@ -128,4 +128,24 @@ public class Damageable : MonoBehaviour
         }
         return false;
     }
+
+    //return whether the character was heal or not
+    public bool Heal(int healthRestore)
+    {
+        if(IsAlive && Health < MaxHealth)
+        {
+            //Mathf.Max return the higher value out of the 2 values. Logic: if the health is >= max health, then this is gonna return a negative value.
+            //In that case we are gonna default the max heal to 0, because we can't heal above our max health.
+            int maxHeal = Mathf.Max(MaxHealth - Health, 0);
+            int actualHeal = Mathf.Min(maxHeal, healthRestore);//Mathf.Min return the lower value out of the 2. 
+            Health += actualHeal;
+            CharacterEvents.characterHealed(gameObject, actualHeal);//get the ui manager to create the healing text
+            return true;
+        }
+
+        return false;
+    }
+
+
+
 }
