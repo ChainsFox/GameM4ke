@@ -10,9 +10,11 @@ public class HealthPickup : MonoBehaviour
     //run that function with the parameter in the characterHealed event(gameObject, healthRestore).
     public int healthRestore = 20;
     public Vector3 spinRotaionSpeed = new Vector3(0, 180, 0);
-    void Start()
+    AudioSource pickupSource;
+
+    void Awake()
     {
-        
+        pickupSource = GetComponent<AudioSource>();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -23,7 +25,8 @@ public class HealthPickup : MonoBehaviour
         {
             bool wasHealed = damageable.Heal(healthRestore);
 
-            if(wasHealed)
+            if (wasHealed)
+                AudioSource.PlayClipAtPoint(pickupSource.clip, gameObject.transform.position, pickupSource.volume);
                 Destroy(gameObject);//use once and destroy
         }
     }
